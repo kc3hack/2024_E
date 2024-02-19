@@ -55,6 +55,13 @@ INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, 
     "data": "日本のどこか"
 }
 
+/* geoobject */
+{
+    "here_lat": 35.52389021,
+    "here_lon": 135.3252324,
+    "quantitylimit": 50
+}
+
 SELECT ST_Distance_Sphere(
     ( SELECT latlon FROM geoobject WHERE object_uuid='08080eea-cd5a-11ee-a5cc-00ffad921c1b' ),
     ( SELECT latlon FROM geoobject WHERE object_uuid='606164a5-cd5a-11ee-a5cc-00ffad921c1b' )
