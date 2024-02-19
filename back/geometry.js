@@ -3,20 +3,24 @@ const express = require('express');
 const app = express();
 app.use(express.json());
 
-const connection = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'pass',
-  database: 'ARdatabase'
-});
-/*
-const connection = mysql.createConnection({
-  host: 'paripari.dix.asia',
-  user: 'testuser',
-  password: 'testpass',
-  database: 'ardatabase'
-});
-*/
+let connection;
+const istest = 1;
+if(istest) {
+  connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'pass',
+    database: 'ARdatabase'
+  });
+} else {
+  connection = mysql.createConnection({
+    host: 'paripari.dix.asia',
+    user: 'testuser',
+    password: 'testpass',
+    database: 'mrdatabase'
+  });
+}
+
 connection.connect((err) => {  //MySQLに接続できないとき
   if (err) {
     console.log('error connecting: ' + err.stack);
@@ -41,6 +45,14 @@ const here_obj_distance_SQL = `SELECT \
 
 const quantitylimit_limit = 200;  //in /getgeoobject
 
+//近距離オブジェクトかどうか判定 in /getgeoobject
+let distancelevel = (points, thresh=20) => {
+  let a;
+  if(points.distance <= thresh) a=true;
+  else a=false;
+  return a;
+};
+
 
 
 //既存アカウントにログイン
@@ -54,11 +66,11 @@ app.post('/signin', (req,res) => {
       let result = {};
                 
       if (results[0].COUNT == 0) {
-        result = {status: false};
+        result = {status: false, message: 'Failure to sign in'};
         console.log('Failure to sign in');
 
       } else {
-        result = {status: true, user_id: user_id, pass: pass};
+        result = {status: true, message: '', user_id: user_id, pass: pass};
         console.log('Success to sign in');
       }
 
@@ -81,7 +93,7 @@ app.post('/signup', (req,res) => {
     let result = {};
                     
     if (results[0].COUNT == 1) {
-      result = {status: false};
+      result = {status: false, message: 'Failure to sign up: Already created'};
       console.log('Failure to sign up: Already created');
 
     } else {
@@ -89,10 +101,10 @@ app.post('/signup', (req,res) => {
                         [user_id, pass], (err,results) => {
 
         if(err) {
-          result = {status: false};
+          result = {status: false, message: 'Failure to sign up: Incorrect parameters'};
           console.log('Failure to sign up: Incorrect parameters');
         } else {
-          result =  {status: true, user_id: user_id, pass: pass};
+          result =  {status: true, message: '', user_id: user_id, pass: pass};
           console.log(`Success to sign up: user_id=>${user_id}, pass=>${pass}`);
         }
       });
@@ -134,11 +146,12 @@ app.post('/putgeoobject', (req,res) => {
                       (err,results) => {
 
       if(err) {
-        result = {status: false};
+        result = {status: false, message: 'Failure to create geoobject'};
         console.log('Failure to create geoobject');
       } else {
         result =  {
                     status: true, 
+                    message: '',
                     type: type, 
                     owner_uuid: owner_uuid, 
                     latitude: latitude, 
@@ -168,21 +181,26 @@ app.post('/getgeoobject', (req,res) => {
   let quantitylimit = quantitylimit_limit;
   if (req.body.quantitylimit < quantitylimit_limit) { quantitylimit = req.body.quantitylimit; }
 
-  //オブジェクトのobject_uuidや現在地との距離を指定個数取得
+  //オブジェクトのobject_uuidおよび現在地との距離を指定個数取得
   connection.query(here_obj_distance_SQL, 
                     [here_lat,here_lon, quantitylimit], 
                     (err,results) => {
     let result = {};
 
     if(err) {
-      result = {status: false};
+      result = {status: false, message: 'Failure to get geoobject'};
       console.log('Failure to get geoobject');
       res.send(JSON.stringify(result));
 
     } else {
-      //取得したobject_uuidを配列化
+      //取得したobject_uuidおよび近距離オブジェクト判定を配列化
       let aroundobj_arr = [];
-      for (let i=0; i<results.length; i++) { aroundobj_arr[i] = results[i].object_uuid; }
+      let distancelevel_arr = [];
+      for (let i=0; i<results.length; i++) {
+        aroundobj_arr[i] = results[i].object_uuid;
+        distancelevel_arr[i] = distancelevel(results[i]);
+      }
+      console.log(distancelevel_arr)
 
       //object_uuidからそのオブジェクトの各種カラムを取得
       connection.query('SELECT type, owner_uuid, latitude, longitude, altitude, objectdegree, data \
@@ -193,6 +211,7 @@ app.post('/getgeoobject', (req,res) => {
 
         for (let i=0; i<results.length; i++) {
           getobj_arr[i] = {
+                            distancelevel: distancelevel_arr[i],
                             object_uuid: aroundobj_arr[i],
                             type: results[i].type,
                             owner_uuid: results[i].owner_id,
@@ -204,7 +223,7 @@ app.post('/getgeoobject', (req,res) => {
                           };
         }
 
-        result = {status: true, obj: getobj_arr};  //例：個々のlatitudeにアクセスするには result.obj[i].latitude
+        result = {status: true, message: '', obj: getobj_arr};  //例：個々のlatitudeにアクセスするには result.obj[i].latitude
         console.log('Success to get geoobject');
         res.send(JSON.stringify(result));
       });

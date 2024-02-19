@@ -2,7 +2,6 @@ INSERT INTO geom (spotname, latlon) VALUES ( 'kandaimae station', ST_GeomFromTex
 SELECT id, ST_X(latlon), ST_Y(latlon), ST_ASTEXT(latlon) FROM geoobject;
 /* POINT(緯度lat 経度lon) */
 
-
 CREATE TABLE user (
     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
     user_uuid VARCHAR(40) NOT NULL DEFAULT(UUID()),
@@ -80,3 +79,4 @@ SELECT
 FROM geoobject
 ORDER BY distance ASC
 LIMIT 200;
+
