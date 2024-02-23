@@ -78,6 +78,7 @@ INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, 
     "quantitylimit": 50
 }
 
+/* addreaction */
 {
     "type": 0,
     "user_uuid": "4f6d2b32-cc0b-11ee-a3d1-00ffad921c1b",
