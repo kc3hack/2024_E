@@ -4,7 +4,7 @@ const app = express();
 app.use(express.json());
 
 let connection;
-const istest = 1;
+const istest = 0;
 if(istest) {
   connection = mysql.createConnection({
     host: 'localhost',
