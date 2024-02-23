@@ -20,11 +20,28 @@ CREATE TABLE geoobject (
     altitude DECIMAL(11,8), 
     objectdegree FLOAT,
     data TEXT NOT NULL,
+    reaction JSON DEFAULT(JSON_ARRAY(0)),
 
     SPATIAL INDEX(latlon)
 );
-/*altitudeの単位m*/
+/* altitudeの単位はm */
+/* reaction(=リアクションの総数)の種類増やすときDEFAULT値はJSON_ARRAY(0,0,...)にUPDATE */
+/* 既存レコードには「UPDATE geoobject SET reaction = JSON_ARRAY_APPEND(reaction, '$', 0);」 */
 
+CREATE TABLE isreaction (
+    user_uuid VARCHAR(40) NOT NULL,
+    trueobj_uuid JSON DEFAULT(JSON_ARRAY( JSON_ARRAY('') )),
+    modified2true JSON DEFAULT(JSON_ARRAY( JSON_ARRAY('') ))
+);
+/* 2次元配列[i][j]
+    [ [ '58gfvn2-fwnir4', ... ], [ , ] ]
+    iがリアクションの種類、jがtrueであるobject_uuidを格納する場所
+    i=0:役に立った
+*/
+
+
+
+/* 以降試行メモ */
 SELECT
     case
     when count(*) = 0 then '0'
@@ -38,7 +55,7 @@ INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, 
 
 /* signin,signup */
 {
-    "user_id": "testuser",
+    "user_id": "testuser2",
     "pass": "testpass"
 }
 
@@ -54,11 +71,17 @@ INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, 
     "data": "日本のどこか"
 }
 
-/* geoobject */
+/* getgeoobject */
 {
     "here_lat": 35.52389021,
     "here_lon": 135.3252324,
     "quantitylimit": 50
+}
+
+{
+    "type": 0,
+    "user_uuid": "4f6d2b32-cc0b-11ee-a3d1-00ffad921c1b",
+    "object_uuid": "08080eea-cd5a-11ee-a5cc-00ffad921c1b"
 }
 
 SELECT ST_Distance_Sphere(
@@ -79,4 +102,16 @@ SELECT
 FROM geoobject
 ORDER BY distance ASC
 LIMIT 200;
+
+SELECT CASE WHEN COUNT(*) = 0 THEN '0' ELSE '1' END COUNT 
+FROM isreaction 
+WHERE user_uuid = "4f6d2b32-cc0b-11ee-a3d1-00ffad921c1b" 
+AND JSON_CONTAINS(trueobj_uuid, '"08080eea-cd5a-11ee-a5cc-00ffad921c1b"', '$[0]');
+
+
+UPDATE isreaction SET trueobj_uuid = json_remove(trueobj_uuid, '$[0]') 
+WHERE user_uuid = "4f6d2b32-cc0b-11ee-a3d1-00ffad921c1b" 
+AND JSON_CONTAINS(trueobj_uuid, '"08080eea-cd5a-11ee-a5cc-00ffad921c1b"', '$[0]');
+
+UPDATE geoobject SET reaction = JSON_REPLACE(reaction, '$[0]', 0) WHERE object_uuid = "08080eea-cd5a-11ee-a5cc-00ffad921c1b";
 
