@@ -348,4 +348,4 @@ server.on('listening', () => {
 server.on('connection', connection => {
     connection.end('HTTP/1.0 200 OK\r\n\r\nok');
 });
-server.listen(3000);
+server.listen(3000, '0.0.0.0');
