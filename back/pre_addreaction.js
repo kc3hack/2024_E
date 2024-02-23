@@ -1,3 +1,10 @@
+const is_useruuid_SQL = is_SQL + "FROM isreaction WHERE user_uuid = ?;"  //in /addreaction
+const is_objuuid_SQL = is_SQL + "FROM isreaction WHERE user_uuid = ? AND JSON_CONTAINS(trueobj_uuid, ?, ?);"  //in /addreaction
+
+const time2_lose_reaction = '00:00:10.000000';  //時:分:秒.000000  in /addreaction
+
+
+
 //リアクションをしたとき
 app.post('/addreaction', (req,res) => {
     const type = req.body.type;

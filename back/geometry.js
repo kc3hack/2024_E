@@ -34,19 +34,16 @@ connection.connect((err) => {  //MySQLに接続できないとき
 const is_SQL = "SELECT \
                   CASE WHEN COUNT(*) = 0 THEN '0' ELSE '1' \
                   END COUNT "
-const is_user_SQL = is_SQL + "FROM user WHERE user_id = ?;"  //in /signin,signup
+const is_user_SQL = is_SQL + "FROM user WHERE user_id = ? AND pass = ?;"  //in /signin,signup
 const here_obj_distance_SQL = `SELECT \
                                   object_uuid, \
                                   ST_Distance( ST_GeomFromText( 'POINT( ? ? )', 4326 ), latlon ) AS 'distance' \
                                 FROM geoobject \
                                 ORDER BY distance ASC \
                                 LIMIT ?;`  //in /getgeoobject
-const is_useruuid_SQL = is_SQL + "FROM isreaction WHERE user_uuid = ?;"  //in /addreaction
-const is_objuuid_SQL = is_SQL + "FROM isreaction WHERE user_uuid = ? AND JSON_CONTAINS(trueobj_uuid, ?, ?);"  //in /addreaction
 
 //広域定数
 const quantitylimit_limit = 200;  //in /getgeoobject
-const time2_lose_reaction = '00:00:10.000000';  //時:分:秒.000000  in /addreaction
 
 //近距離オブジェクトかどうか判定 bool in /getgeoobject
 let distancelevel = (points, thresh=50) => {
@@ -64,7 +61,7 @@ app.post('/signin', (req,res) => {
   const pass = req.body.pass;
 
   connection.query(is_user_SQL, 
-                    user_id, 
+                    [user_id, pass], 
                     (err,results) => {
       let result = {};
                 
@@ -76,13 +73,12 @@ app.post('/signin', (req,res) => {
         connection.query('SELECT user_uuid FROM user WHERE user_id = ?', 
                     user_id, 
                     (err,results) => {
+          const user_uuid = results[0].user_uuid;  //user_idからuser_uuidを取得
+          //user_idは存在が確認済だからerr分岐は実装しない
 
-        owner_uuid = results[0].user_uuid;  //user_idからuser_uuidを取得
-        //user_idは存在が確認済だからerr分岐は実装しない
-                    })
-
-        result = {status: true, message: '', user_id: user_id, pass: pass};
-        console.log('Success to sign in');
+          result = {status: true, message: '', user_id: user_id, user_uuid: user_uuid};
+          console.log('Success to sign in');
+        });
       }
 
       res.send(JSON.stringify(result));
@@ -99,7 +95,7 @@ app.post('/signup', (req,res) => {
   const pass = req.body.pass;
 
   connection.query(is_user_SQL, 
-                    user_id, 
+                    [user_id, pass], 
                     (err,results) => {
     let result = {};
                     
@@ -132,45 +128,39 @@ app.post('/signup', (req,res) => {
 
 //オブジェクトを1件データベースに登録
 app.post('/putgeoobject', (req,res) => {
-  const user_id = req.body.user_id;
   const type = req.body.type;
-  let owner_uuid = 'dafault';
+  const owner_uuid = req.body.owner_uuid;
   const latitude = req.body.latitude;
   const longitude = req.body.longitude;
   const altitude = req.body.altitude;
   const objectdegree = req.body.objectdegree;
   const data = req.body.data;
 
-  
-    
-    //オブジェクト登録
-    connection.query(`INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, objectdegree, data) \
-                      VALUES (?, ?, ?, ?, ST_GeomFromText( 'POINT( ${latitude} ${longitude} )', 4326 ), ?, ?, ?)`,
-                      [type, owner_uuid, latitude, longitude, altitude, objectdegree, data], 
-                      (err,results) => {
+  //オブジェクト登録
+  connection.query(`INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, objectdegree, data) \
+                    VALUES (?, ?, ?, ?, ST_GeomFromText( 'POINT( ${latitude} ${longitude} )', 4326 ), ?, ?, ?)`,
+                    [type, owner_uuid, latitude, longitude, altitude, objectdegree, data], 
+                    (err,results) => {
 
-      if(err) {
-        result = {status: false, message: 'Failure to create geoobject'};
-        console.log('Failure to create geoobject');
-      } else {
-        result =  {
-                    status: true, 
-                    message: '',
-                    type: type, 
-                    owner_uuid: owner_uuid, 
-                    latitude: latitude, 
-                    longitude: longitude, 
-                    altitude: altitude, 
-                    objectdegree: objectdegree, 
-                    data: data
-                  };
-        console.log('Success to create geoobject');
-      }
+    if(err) {
+      result = {status: false, message: 'Failure to create geoobject'};
+      console.log('Failure to create geoobject');
+    } else {
+      result =  {
+                  status: true, 
+                  message: '',
+                  type: type, 
+                  owner_uuid: owner_uuid, 
+                  latitude: latitude, 
+                  longitude: longitude, 
+                  altitude: altitude, 
+                  objectdegree: objectdegree, 
+                  data: data
+                };
+      console.log('Success to create geoobject');
+    }
 
-      res.send(JSON.stringify(result));
-
-      });
-
+    res.send(JSON.stringify(result));
   });
 
 });
