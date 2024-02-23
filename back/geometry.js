@@ -36,7 +36,7 @@ const is_SQL = "SELECT \
                   END COUNT "
 const is_user_SQL = is_SQL + "FROM user WHERE user_id = ? AND pass = ?;"  //in /signin,signup
 const here_obj_distance_SQL = `SELECT \
-                                  object_uuid, \
+                                  object_uuid, num,\
                                   ST_Distance( ST_GeomFromText( 'POINT( ? ? )', 4326 ), latlon ) AS 'distance' \
                                 FROM geoobject \
                                 ORDER BY distance ASC \
@@ -68,7 +68,7 @@ app.post('/signin', (req,res) => {
       if (results[0].COUNT == 0) {
         result = {status: false, message: 'Failure to sign in'};
         console.log('Failure to sign in');
-
+        res.send(JSON.stringify(result));
       } else {
         connection.query('SELECT user_uuid FROM user WHERE user_id = ?', 
                     user_id, 
@@ -78,12 +78,11 @@ app.post('/signin', (req,res) => {
 
           result = {status: true, message: '', user_id: user_id, user_uuid: user_uuid};
           console.log('Success to sign in');
+          res.send(JSON.stringify(result));
         });
       }
 
-      res.send(JSON.stringify(result));
-
-    });
+  });
 
 });
 
@@ -102,7 +101,7 @@ app.post('/signup', (req,res) => {
     if (results[0].COUNT == 1) {
       result = {status: false, message: 'Failure to sign up: Already created'};
       console.log('Failure to sign up: Already created');
-
+      res.send(JSON.stringify(result));
     } else {
       connection.query('INSERT INTO user (user_id, pass) VALUES (?, ?)',
                         [user_id, pass], (err,results) => {
@@ -111,14 +110,13 @@ app.post('/signup', (req,res) => {
           result = {status: false, message: 'Failure to sign up: Incorrect parameters'};
           console.log('Failure to sign up: Incorrect parameters');
         } else {
-          result =  {status: true, message: '', user_id: user_id, pass: pass};
+          result =  {status: true, message: ''};
           console.log('Success to sign up');
+          res.send(JSON.stringify(result));
         }
       });
 
     }
-
-    res.send(JSON.stringify(result));
   
   });
 
@@ -146,17 +144,7 @@ app.post('/putgeoobject', (req,res) => {
       result = {status: false, message: 'Failure to create geoobject'};
       console.log('Failure to create geoobject');
     } else {
-      result =  {
-                  status: true, 
-                  message: '',
-                  type: type, 
-                  owner_uuid: owner_uuid, 
-                  latitude: latitude, 
-                  longitude: longitude, 
-                  altitude: altitude, 
-                  objectdegree: objectdegree, 
-                  data: data
-                };
+      result =  {status: true, message: ''};
       console.log('Success to create geoobject');
     }
 
@@ -187,11 +175,13 @@ app.post('/getgeoobject', (req,res) => {
       res.send(JSON.stringify(result));
 
     } else {
-      //取得したobject_uuidおよび近距離オブジェクト判定を配列化
+      //取得したobject_uuid、リアクション数、近距離オブジェクト判定を配列化
       let aroundobj_arr = [];
+      let num_arr = [];
       let distancelevel_arr = [];
       for (let i=0; i<results.length; i++) {
         aroundobj_arr[i] = results[i].object_uuid;
+        num_arr[i] = results[i].num;
         distancelevel_arr[i] = distancelevel(results[i]);  //bool
       }
 
@@ -212,7 +202,8 @@ app.post('/getgeoobject', (req,res) => {
                             longitude: results[i].longitude,
                             altitude: results[i].altitude,
                             objectdegree: results[i].objectdegree,
-                            data: results[i].data
+                            data: results[i].data,
+                            num: num_arr[i]
                           };
         }
 
