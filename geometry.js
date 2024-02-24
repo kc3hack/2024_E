@@ -44,7 +44,7 @@ const here_obj_distance_SQL = `SELECT \
                                 LIMIT ?;`  //in /getgeoobject
 
 const reaciton_SQL ="SELECT CASE WHEN COUNT(*) = 0 THEN '0' ELSE '1' \
-END COUNT FROM reaction WHERE reactuser_uuid = ? AND object_uuid =? ;"
+END COUNT FROM reaction WHERE  object_uuid =? AND reactuser_uuid = ?;"
 
 const quantitylimit_limit = 200;  //in /getgeoobject
 
@@ -318,7 +318,7 @@ app.post('/addreaction', (req, res) =>{
     [object_uuid, reactuser_uuid], 
     (err,results) => {
   let result = {};//true false
- if (results[0].COUNT == 1) {
+ if (results[0].COUNT == 0) {
 
     connection.query(`INSERT INTO reaction (object_uuid,reactuser_uuid) \
     VALUES (?, ?)`,
@@ -369,43 +369,45 @@ app.post('/addreaction', (req, res) =>{
 
     
 
-      if(err) {
-        result = {status: false, message: 'Failure to add reaction'};
-        console.log('Failure add reaction');
-      } else {
+     // if(err) {
+       // result = {status: false, message: 'Failure to add reaction'};
+        //console.log('Failure add reaction');
+      //} else {
         if(diffHour > 3){
-          connection.query(`UPDATE reaction set object_uuid,reactuser_uuid WHERE object_uuid = ? AND reactuser_uuid = ?;\
+          connection.query(`UPDATE reaction SET reaction_time = NOW() WHERE object_uuid = ? AND reactuser_uuid = ? ;\
           `,
-          [object_uuid,reactuser_uuid], 
+          [object_uuid, reactuser_uuid], 
           (err,results) => {
             let result = {};
-            result =  {
-              status: true, 
+            // result =  {
+            //   // status: true, 
                           
-              object_uuid:object_uuid,           
-              reactuser_uuid: reactuser_uuid
-                      };
-            console.log(`Listening on port ${diffHour}...`)
+            //   // object_uuid:object_uuid,           
+            //   // reactuser_uuid: reactuser_uuid
+            //           };
+            console.log(`Listening on port ${diffHour}...`);
+            return;
             
 
 
         
           });
-        }else{
-          result = {status: false, message: 'Failure to add: Incorrect parameters'};
-              console.log('Failure to add: Incorrect parameters');
         }
+        // else{
+        //   //result = {status: false, message: 'Failure to add: Incorrect parameters'};
+        //       console.log('Failure to add: Incorrect parameters');
+        // }
     
-        res.send(JSON.stringify(result));
+        
 
 
-      }
+      //}
 
 
 
     //});          
        });
-  }
+   }
   res.send(JSON.stringify(result));
 
 });

@@ -28,8 +28,8 @@ CREATE TABLE geoobject (
 
 CREATE TABLE reaction (
     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
-    object_uuid VARCHAR(40) DEFAULT(UUID()),
-    reactuser_uuid VARCHAR(40),
+    object_uuid VARCHAR(40) NOT NULL,
+    reactuser_uuid VARCHAR(40) NOT NULL,
     reaction_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     
     
