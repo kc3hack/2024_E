@@ -143,8 +143,8 @@ app.post('/putgeoobject', (req,res) => {
     //user_id, passは存在が確認済だからerr分岐は実装しない
     
     //オブジェクト登録
-    connection.query(`INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, objectdegree, data) \
-                      VALUES (?, ?, ?, ?, ST_GeomFromText( 'POINT( ${latitude} ${longitude} )', 4326 ), ?, ?, ?)`,
+    connection.query(`INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, objectdegree, data,num) \
+                      VALUES (?, ?, ?, ?, ST_GeomFromText( 'POINT( ${latitude} ${longitude} )', 4326 ), ?, ?, ?, ? )`,
                       [type, owner_uuid, latitude, longitude, altitude, objectdegree, data], 
                       (err,results) => {
 
@@ -161,7 +161,8 @@ app.post('/putgeoobject', (req,res) => {
                     longitude: longitude, 
                     altitude: altitude, 
                     objectdegree: objectdegree, 
-                    data: data
+                    data: data,
+                    num:num
                   };
         console.log('Success to create geoobject');
       }
@@ -307,7 +308,7 @@ app.post('/addreaction', (req, res) =>{
   //const time = req.body.reaction_time;
   const user_id = req.body.user_id;
   const pass = req.body.pass;
-  const reactuser_uuid =req.body.reactuser_uuid;
+  const reactuser_uuid =req.body.user_uuid;
   const object_uuid =req.body.object_uuid;
   
 
@@ -341,6 +342,14 @@ app.post('/addreaction', (req, res) =>{
       
   
     });
+    connection.query('UPDATE `geoobject` SET num = num + 1 WHERE object_uuid = ?',
+    [object_uuid], (err,results) =>{
+      result = {status: true,message: ''}
+
+
+    });
+
+
     
     //falseの処理 
   }
@@ -373,30 +382,41 @@ app.post('/addreaction', (req, res) =>{
        // result = {status: false, message: 'Failure to add reaction'};
         //console.log('Failure add reaction');
       //} else {
-        if(diffHour > 3){
+        if(diffHour > 0){
           connection.query(`UPDATE reaction SET reaction_time = NOW() WHERE object_uuid = ? AND reactuser_uuid = ? ;\
           `,
           [object_uuid, reactuser_uuid], 
           (err,results) => {
-            let result = {};
+            //let result = {};
+            result = {status: true,message: ''}
             // result =  {
             //   // status: true, 
                           
             //   // object_uuid:object_uuid,           
             //   // reactuser_uuid: reactuser_uuid
             //           };
-            console.log(`Listening on port ${diffHour}...`);
-            return;
+           // console.log(`Listening on port ${diffHour}...`);
+            
             
 
 
         
           });
+
+          connection.query('UPDATE `geoobject` SET num = num + 1 WHERE object_uuid = ?',
+          [object_uuid], (err,results) =>{
+          result = {status: true,message: ''}
+
+
+           });
+
+
+
         }
-        // else{
-        //   //result = {status: false, message: 'Failure to add: Incorrect parameters'};
-        //       console.log('Failure to add: Incorrect parameters');
-        // }
+        else{
+          result = {status: false, message: 'Failure to add: Please wait until you can repost'};
+              console.log('Failure to add: Please wait until you can repost');
+        }
     
         
 
@@ -405,7 +425,7 @@ app.post('/addreaction', (req, res) =>{
 
 
 
-    //});          
+   // });          
        });
    }
   res.send(JSON.stringify(result));

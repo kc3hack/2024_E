@@ -20,8 +20,7 @@ CREATE TABLE geoobject (
     altitude DECIMAL(11,8), 
     objectdegree FLOAT,
     data TEXT NOT NULL,
-    
-    num bigint(20) NOT NULL
+    num bigint(20) NOT NULL,
 
     SPATIAL INDEX(latlon)
 );
@@ -65,7 +64,8 @@ INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, 
     "longitude": 135.29266771,
     "altitude": 1.592,
     "objectdegree": 155.44,
-    "data": "日本のどこか"
+    "data": "日本のどこか",
+    "num": 0
 }
 
 /* geoobject */
