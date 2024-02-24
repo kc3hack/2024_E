@@ -20,6 +20,8 @@ CREATE TABLE geoobject (
     altitude DECIMAL(11,8), 
     objectdegree FLOAT,
     data TEXT NOT NULL,
+    
+    num bigint(20) NOT NULL
 
     SPATIAL INDEX(latlon)
 );
@@ -28,12 +30,10 @@ CREATE TABLE reaction (
     id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
     object_uuid VARCHAR(40) DEFAULT(UUID()),
     reactuser_uuid VARCHAR(40),
-    reaction_time datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+    reaction_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     
-
-   
     
-    SPATIAL INDEX(latlon)
+    
 );
 /*altitudeの単位m*/
 

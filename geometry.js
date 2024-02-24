@@ -44,7 +44,7 @@ const here_obj_distance_SQL = `SELECT \
                                 LIMIT ?;`  //in /getgeoobject
 
 const reaciton_SQL ="SELECT CASE WHEN COUNT(*) = 0 THEN '0' ELSE '1' \
-END COUNT  FROM reaction WHERE owner_uuid = ? AND object_uuid =? ;"
+END COUNT FROM reaction WHERE reactuser_uuid = ? AND object_uuid =? ;"
 
 const quantitylimit_limit = 200;  //in /getgeoobject
 
@@ -237,142 +237,160 @@ app.post('/getgeoobject', (req,res) => {
 
 });
 
-app.post('/api/addreaction ', (req, res) =>{
-const user_uuid = req.body.user_id;
-const time = req.body. reaction_time;
-let nowtime = new Date();
+// app.post('/api/addreaction ', (req, res) =>{
+// const user_uuid = req.body.user_id;
+// const time = req.body. reaction_time;
+// let nowtime = new Date();
 
-connection.query(reaciton_SQL, 
-  [object_uuid, owner_uuid,], 
-  (err,results) => {
-let result = {};//true false
-if (results[0].COUNT == 0) {
+// connection.query(reaciton_SQL, 
+//   [object_uuid, owner_uuid,], 
+//   (err,results) => {
+// let result = {};//true false
+// if (results[0].COUNT == 0) {
 
-  //falseの処理 
-}
+//   //falseの処理 
+// }
 
-else{
+// else{
 
-  connection.query('SELECT reaction_time FROM reaction',[reaction_time],(err,results)=>{
-  let result = {};
+//   connection.query('SELECT reaction_time FROM reaction',[reaction_time],(err,results)=>{
+//   let result = {};
   
   
-})
+// })
 
   
 
-const diffMiSec2 = nowtime.getTime() - results[0].reaction_time.getTime();
-const diffHour = diffMiSec2 / (60 * 60 * 1000);
+// const diffMiSec2 = nowtime.getTime() - results[0].reaction_time.getTime();
+// const diffHour = diffMiSec2 / (60 * 60 * 1000);
 
 
 
-connection.query('SELECT user_uuid FROM user WHERE user_id = ? AND pass = ?', 
-                    [user_id, pass], 
-                    (err,results) => {
+// connection.query('SELECT user_uuid FROM user WHERE user_id = ? AND pass = ?', 
+//                     [user_id, pass], 
+//                     (err,results) => {
 
-    let result = {};
-    reactuser_uuid = results[0].user_uuid;
+//     let result = {};
+//     reactuser_uuid = results[0].user_uuid;
 
-    connection.query(`INSERT INTO reaction ( owner_uuid, object_uuid, reaction_time) \
-                      VALUES (?, ?, ?)`,
-                      [object_uuid, owner_uuid,reaction_time], 
-                      (err,results) => {
+//     connection.query(`INSERT INTO reaction ( owner_uuid, object_uuid, reaction_time) \
+//                       VALUES (?, ?, ?)`,
+//                       [object_uuid, owner_uuid,reaction_time], 
+//                       (err,results) => {
 
-    if(err) {
-      result = {status: false, message: 'Failure to add reaction'};
-      console.log('Failure add reaction');
-    } else {
+//     if(err) {
+//       result = {status: false, message: 'Failure to add reaction'};
+//       console.log('Failure add reaction');
+//     } else {
 
-    if(diffHour > 3){
-      result =  {
-                  status: true, 
+//     if(diffHour > 3){
+//       result =  {
+//                   status: true, 
                   
                   
-                  owner_uuid: owner_uuid, 
+//                   owner_uuid: owner_uuid, 
                  
-                };
-      console.log('Success to create geoobject');
-    }else{
-      result = {status: false, message: 'Failure to add: Incorrect parameters'};
-          console.log('Failure to add: Incorrect parameters');
-    }
+//                 };
+//       console.log('Success to create geoobject');
+//     }else{
+//       result = {status: false, message: 'Failure to add: Incorrect parameters'};
+//           console.log('Failure to add: Incorrect parameters');
+//     }
 
-    res.send(JSON.stringify(result));
+//     res.send(JSON.stringify(result));
 
-    }}););}};
+//     }}););}};
 
-}));
+// }));
 
-app.post('/api/addreaction ', (req, res) =>{
-  const user_uuid = req.body.user_id;
-  const time = req.body. reaction_time;
+app.post('/addreaction', (req, res) =>{
+  //const time = req.body.reaction_time;
+  const user_id = req.body.user_id;
+  const pass = req.body.pass;
+  const reactuser_uuid =req.body.reactuser_uuid;
+  const object_uuid =req.body.object_uuid;
+  
+
   let nowtime = new Date();
 
 
   connection.query(reaciton_SQL, 
-    [object_uuid, owner_uuid,], 
+    [object_uuid, reactuser_uuid], 
     (err,results) => {
   let result = {};//true false
-  if (results[0].COUNT == 0) {
+ if (results[0].COUNT == 1) {
 
-    connection.query(`INSERT INTO reaction ( owner_uuid, object_uuid, reaction_time) \
-    VALUES (?, ?, ?)`,
-    [object_uuid, owner_uuid,reaction_time], 
+    connection.query(`INSERT INTO reaction (object_uuid,reactuser_uuid) \
+    VALUES (?, ?)`,
+    [object_uuid,reactuser_uuid], 
     (err,results) => {
 
       if(err) {
-        result = {status: false, message: 'Failure to create geoobject'};
-        console.log('Failure to create geoobject');
+        result = {status: false, message: 'Failure to add reaction'};
+        console.log('Failure to add reaction');
       } else {
         result =  {
           status: true, 
                       
-                      
-          owner_uuid: owner_uuid,
+          object_uuid:object_uuid,           
+          reactuser_uuid: reactuser_uuid
                   };
-        console.log('Success to create geoobject');
+        console.log('Success to add reaction');
       }
 
-      res.send(JSON.stringify(result));
+      
   
     });
     
     //falseの処理 
   }
-  
   else{
-    connection.query('SELECT reaction_time FROM reaction',[reaction_time],(err,results)=>{
+    connection.query('SELECT reaction_time FROM reaction WHERE object_uuid = ? AND reactuser_uuid = ?;',[object_uuid, reactuser_uuid],(err,results)=>{
       let result = {};
+      let test ={};
+      test={
+        reaction_time:results[0].reaction_time
+
+      };
       const diffMiSec2 = nowtime.getTime() - results[0].reaction_time.getTime();
       const diffHour = diffMiSec2 / (60 * 60 * 1000);
+      
 
 
 
+   
 
-    });
+    // connection.query('SELECT user_uuid FROM user WHERE user_id = ? AND pass = ?', 
+    //                 [user_id, pass], 
+    //                 (err,results) => {
 
-    connection.query('SELECT user_uuid FROM user WHERE user_id = ? AND pass = ?', 
-                    [user_id, pass], 
-                    (err,results) => {
+    //let result = {};
+    //reactuser_uuid = results[0].user_uuid;
 
-    let result = {};
-    reactuser_uuid = results[0].user_uuid;
-
-    connection.query(`UPDATE reaction set create_time = NOW();\
-    `,
-    [reaction_time], 
-    (err,results) => {
+    
 
       if(err) {
         result = {status: false, message: 'Failure to add reaction'};
         console.log('Failure add reaction');
       } else {
         if(diffHour > 3){
-          result =  {
-                      
-                     //まだ
-                    };
-          console.log('Success to create geoobject');
+          connection.query(`UPDATE reaction set object_uuid,reactuser_uuid WHERE object_uuid = ? AND reactuser_uuid = ?;\
+          `,
+          [object_uuid,reactuser_uuid], 
+          (err,results) => {
+            let result = {};
+            result =  {
+              status: true, 
+                          
+              object_uuid:object_uuid,           
+              reactuser_uuid: reactuser_uuid
+                      };
+            console.log(`Listening on port ${diffHour}...`)
+            
+
+
+        
+          });
         }else{
           result = {status: false, message: 'Failure to add: Incorrect parameters'};
               console.log('Failure to add: Incorrect parameters');
@@ -385,10 +403,13 @@ app.post('/api/addreaction ', (req, res) =>{
 
 
 
-    });                
-    });
-  }});
+    //});          
+       });
+  }
+  res.send(JSON.stringify(result));
+
 });
+ });
 
 
 
