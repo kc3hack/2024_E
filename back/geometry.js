@@ -1,10 +1,12 @@
+//import notice from "notice.mjs";
+
 const mysql = require('mysql');
 const express = require('express');
 const app = express();
 app.use(express.json());
 
 let connection;
-const istest = 0;
+const istest = 1;
 if(istest) {
   connection = mysql.createConnection({
     host: 'localhost',
@@ -41,6 +43,7 @@ const here_obj_distance_SQL = `SELECT \
                                 FROM geoobject \
                                 ORDER BY distance ASC \
                                 LIMIT ?;`  //in /getgeoobject
+const reaction_SQL = is_SQL + "FROM reaction WHERE object_uuid =? AND reactuser_uuid = ?;"  //in /addreaction
 
 //広域定数
 const quantitylimit_limit = 200;  //in /getgeoobject
@@ -127,7 +130,7 @@ app.post('/signup', (req,res) => {
 //オブジェクトを1件データベースに登録
 app.post('/putgeoobject', (req,res) => {
   const type = req.body.type;
-  const owner_uuid = req.body.owner_uuid;
+  const owner_uuid = req.body.user_uuid;
   const latitude = req.body.latitude;
   const longitude = req.body.longitude;
   const altitude = req.body.altitude;
@@ -214,6 +217,67 @@ app.post('/getgeoobject', (req,res) => {
       
     }
 
+  });
+
+});
+
+
+
+//リアクション機能
+app.post('/addreaction', (req, res) =>{
+  const object_uuid =req.body.object_uuid;
+  const reactuser_uuid =req.body.user_uuid;
+  
+  let nowtime = new Date();
+
+  connection.query(reaction_SQL, 
+                    [object_uuid, reactuser_uuid], 
+                    (err,results) => {
+    let result = {};  //true false
+    if (results[0].COUNT == 0) {
+
+      connection.query(`INSERT INTO reaction (object_uuid,reactuser_uuid) VALUES (?, ?)`,
+                        [object_uuid, reactuser_uuid], 
+                        (err,results) => {
+        if(err) {
+          result = {status: false, message: 'Failure to add reaction: Error'};
+          console.log('Failure to add reaction: Error');
+        } else {
+          connection.query('UPDATE geoobject SET num = num + 1 WHERE object_uuid = ?',
+                      object_uuid);
+
+          result =  {status: true, message: ''};
+          console.log('Success to add reaction: This\'s First time to react');
+        }
+        res.send(JSON.stringify(result));
+
+      });
+
+    } else {
+      connection.query('SELECT reaction_time FROM reaction WHERE object_uuid = ? AND reactuser_uuid = ?;', 
+                          [object_uuid, reactuser_uuid],(err,results)=>{
+        let result = {};
+
+        const diffMiSec2 = nowtime.getTime() - results[0].reaction_time.getTime();
+        const diffHour = diffMiSec2 / (60 * 60 * 1000);
+        
+        if(diffHour > 3){
+          connection.query(`UPDATE reaction SET reaction_time = NOW() WHERE object_uuid = ? AND reactuser_uuid = ? ;`,
+                            [object_uuid, reactuser_uuid]);
+
+          connection.query('UPDATE geoobject SET num = num + 1 WHERE object_uuid = ?',
+                            object_uuid);
+          result = {status: true, message: ''};
+          console.log('Success to add reaction: Re-reaction');
+
+        } else {
+          result = {status: false, message: 'Failure to add reaction: Please wait until you can react'};
+          console.log('Failure to add reaction: Please wait until you can respond');
+        }
+        res.send(JSON.stringify(result));
+
+      });
+    }
   });
 
 });

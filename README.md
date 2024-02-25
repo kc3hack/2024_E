@@ -1,4 +1,4 @@
-# プロダクト名 
+# プロダクト名 Hidden Field
 <!-- プロダクト名に変更してください -->
 
 ![プロダクト名](https://kc3.me/cms/wp-content/uploads/2023/11/2b1b6d9083182c0ce0aeb60000b4d7a7.png)
@@ -6,7 +6,7 @@
 
 
 ## チーム名
-チーム○ XXXX
+チームE Win_ner
 <!-- チームIDとチーム名を入力してください -->
 
 

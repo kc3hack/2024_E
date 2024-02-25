@@ -20,13 +20,20 @@ CREATE TABLE geoobject (
     altitude DECIMAL(11,8) NOT NULL, 
     objectdegree FLOAT NOT NULL,
     data TEXT NOT NULL,
-    reaction JSON DEFAULT(JSON_ARRAY(0)),
+    num bigint(20) NOT NULL DEFAULT(0),
 
     SPATIAL INDEX(latlon)
 );
 /* altitudeの単位はm */
 /* reaction(=リアクションの総数)の種類増やすときDEFAULT値はJSON_ARRAY(0,0,...)にUPDATE */
 /* 既存レコードには「UPDATE geoobject SET reaction = JSON_ARRAY_APPEND(reaction, '$', 0);」 */
+
+CREATE TABLE reaction (
+    id INT AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    object_uuid VARCHAR(40) NOT NULL,
+    reactuser_uuid VARCHAR(40) NOT NULL,
+    reaction_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
 
 CREATE TABLE isreaction (
     user_uuid VARCHAR(40) NOT NULL,
@@ -61,14 +68,13 @@ INSERT INTO geoobject (type, owner_uuid, latitude, longitude, latlon, altitude, 
 
 /* putgeoobject */
 {
-    "user_id": "testuser",
-    "pass": "testpass",
     "type": "BOARD",
+    "user_uuid": "5df808a4-cc6e-11ee-a3d1-00ffad921c1b",
     "latitude": 35.52345258,
     "longitude": 135.29266771,
     "altitude": 1.592,
     "objectdegree": 155.44,
-    "data": "日本のどこか"
+    "data": "kakaiai"
 }
 
 /* getgeoobject */
